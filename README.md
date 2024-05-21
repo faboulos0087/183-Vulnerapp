@@ -1,13 +1,11 @@
 Selbstvaluation:
 1. Diskutieren Sie, welche Sicherheitsmechanismen wo implementiert wurden und warum diese die Sicherheit der Applikation verbessern, in Ihren eigenen Worten.
 
-SQLi: Im Original wurde der Username direkt in eine SQL-Query eingebaut.
-Ich habe das mit findById() ersetzt, damit landet der User-Input nie direkt
-im SQL-String. Das habe ich im USerServive.java iimplementiert
+SQLi: Im Original wurde der Username direkt in eine SQL-Query eingebaut. Ich habe das mit findById() ersetzt, damit landet der User-Input nie direkt im SQL-String. Das habe ich im SecurityConfig.java im UserDetailsService implementiert.
 
 XSS-Fehler: Ich habe einen CSP-Header im SecurityConfig gesetzt, der das laden fremder Scripts verhindert, da am anfang die HTLM Inhalte im innerHTML gerendert wurden, was eingeschleusten code ausführen konnte. Das habe ich im script.js auf textContent umgestellt, was jetzt alles als normalen Text behandelt.
 
-CSrf: Ich habe den CookieCsrfTokenReposetory im SecurityConfig eingebaut, da legt spring einen Token als Cookie ab, dieser wird vom Frontend gelesen und schickt ihn im Header mit.
+CSrf: Ich habe im SecurityConfig csrf.spa() verwendet, damit legt Spring automatisch einen XSRF-TOKEN als Cookie ab, dieser wird vom Frontend gelesen und bei schreibenden Requests als X-XSRF-TOKEN Header mitgeschickt.
 
 Passwörter: Ich habe BCrypt im SecurityConfig verwendet, dass Passwörter als Hash speichert, was heisst, das sie unleserlich werden. Zusätzlich habe ich Passwortregeln, wie min. 10 Zeichen im UserCreateDTO implementiert.
 

@@ -21,7 +21,7 @@ Demo-Konten:
 ./gradlew test
 ```
 
-37 Sicherheits-Integrationstests mit `WebTestClient`
+35 Sicherheits-Integrationstests mit `WebTestClient`
 ([SecurityIntegrationTest](src/test/java/ch/bbw/m183/vulnerapp/SecurityIntegrationTest.java)).
 
 ## Pflicht-Anforderungen — Umsetzung im Überblick
@@ -31,13 +31,13 @@ Demo-Konten:
 | Korrekte REST-Verben | [AdminController](src/main/java/ch/bbw/m183/vulnerapp/controller/AdminController.java) `POST/GET/DELETE`, [BlogController](src/main/java/ch/bbw/m183/vulnerapp/controller/BlogController.java) `GET/POST` |
 | Session-basierte Authentifizierung | [SecurityConfig](src/main/java/ch/bbw/m183/vulnerapp/SecurityConfig.java) `formLogin`, [RestfulFormService](src/main/java/ch/bbw/m183/vulnerapp/service/RestfulFormService.java) JSON-Login |
 | RBAC (User / Admin) | [UserEntity.role](src/main/java/ch/bbw/m183/vulnerapp/datamodel/UserEntity.java) → `UserDetailsService` (SecurityConfig) → `hasRole`-Matcher |
-| CSRF-Protection | `CookieCsrfTokenRepository.withHttpOnlyFalse` + Eager-Token-Filter in [SecurityConfig](src/main/java/ch/bbw/m183/vulnerapp/SecurityConfig.java); Frontend in [script.js](src/main/resources/static/script.js) sendet `X-XSRF-TOKEN` |
+| CSRF-Protection | Spring Security SPA-CSRF via `csrf.spa()` in [SecurityConfig](src/main/java/ch/bbw/m183/vulnerapp/SecurityConfig.java); Frontend in [script.js](src/main/resources/static/script.js) sendet `X-XSRF-TOKEN` |
 | Sichere Passwort-Speicherung | `BCryptPasswordEncoder` in [SecurityConfig](src/main/java/ch/bbw/m183/vulnerapp/SecurityConfig.java), Passwort-Regeln in [UserCreateDto](src/main/java/ch/bbw/m183/vulnerapp/datamodel/UserCreateDto.java) |
 | Hibernate-Validator (REST + DB) | `@Valid` in den Controllern, `@NotBlank/@Size/@Pattern` in [UserEntity](src/main/java/ch/bbw/m183/vulnerapp/datamodel/UserEntity.java), [BlogEntity](src/main/java/ch/bbw/m183/vulnerapp/datamodel/BlogEntity.java), [UserCreateDto](src/main/java/ch/bbw/m183/vulnerapp/datamodel/UserCreateDto.java); JPA `validation.mode=AUTO` in [application.yaml](src/main/resources/application.yaml) |
 | SQLi-Behebung | [UserService](src/main/java/ch/bbw/m183/vulnerapp/service/UserService.java) nutzt `findById` statt String-Concat |
 | XSS-Behebung | [script.js](src/main/resources/static/script.js) rendert mit `textContent`; CSP-Header in SecurityConfig |
 | CSRF-Behebung | Siehe Punkt CSRF-Protection oben |
-| WebTestClient-Tests | [SecurityIntegrationTest](src/test/java/ch/bbw/m183/vulnerapp/SecurityIntegrationTest.java) — 4 Nested-Gruppen (Anonymous/User/Admin/Regression) |
+| WebTestClient-Tests | [SecurityIntegrationTest](src/test/java/ch/bbw/m183/vulnerapp/SecurityIntegrationTest.java) — Zugriffsmatrix gemäss Auftrag plus gezielte Regressionstests |
 
 ### Zusätzliche (nicht-geforderte) Härtungen
 
@@ -65,10 +65,8 @@ CSRF nutzt aus, dass der Browser bei einer Cross-Site-Request automatisch Cookie
 mitsendet — eine fremde Seite kann also im Namen des eingeloggten Opfers `POST /api/blog`
 abschicken. Das **Double-Submit-Cookie**-Muster bricht den Angriff:
 
-1. Spring legt pro Session einen Token in das Cookie `XSRF-TOKEN` (`HttpOnly=false`).
-   Ein zusätzlicher `OncePerRequestFilter` ruft `token.getToken()` auf, damit das Cookie
-   auch bei einer simplen `GET`-Anfrage tatsächlich gesetzt wird (Spring 6 erzeugt den
-   Token sonst erst on-demand).
+1. Spring Security konfiguriert mit `csrf.spa()` das CSRF-Verhalten für ein JavaScript-
+   Frontend. Der Browser erhält ein `XSRF-TOKEN`-Cookie, das der eigene Code lesen kann.
 2. Der eigene JS-Code liest das Cookie und schickt den Wert als `X-XSRF-TOKEN`-Header bei
    jeder schreibenden Anfrage mit.
 3. Eine fremde Origin kann das Cookie **nicht lesen** (Same-Origin-Policy) und den Header
